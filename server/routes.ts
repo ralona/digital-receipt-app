@@ -38,10 +38,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new receipt
   app.post("/api/receipts", upload.single('signature'), async (req, res) => {
     try {
+      console.log("Received request body:", req.body);
+      console.log("Received file:", req.file);
+      
       const { amount, payerName, recipientName, date } = req.body;
       
       // Validate required fields
       if (!amount || !payerName || !recipientName) {
+        console.log("Missing fields - amount:", amount, "payerName:", payerName, "recipientName:", recipientName);
         return res.status(400).json({ 
           message: "Missing required fields: amount, payerName, recipientName" 
         });
