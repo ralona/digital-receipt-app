@@ -36,6 +36,7 @@ export const receiptFormSchema = z.object({
   amount: z.number().min(0.01, "El importe debe ser mayor que 0"),
   payerName: z.string().min(1, "El nombre del pagador es requerido"),
   recipientName: z.string().min(1, "El nombre del receptor es requerido"),
+  date: z.date(),
   signature: z.instanceof(File).optional(),
 });
 

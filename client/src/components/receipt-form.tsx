@@ -31,6 +31,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       amount: receiptData.amount,
       payerName: receiptData.payerName,
       recipientName: receiptData.recipientName,
+      date: receiptData.date,
       signature: undefined,
     },
   });
@@ -62,6 +63,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       amount: values.amount,
       payerName: values.payerName,
       recipientName: values.recipientName,
+      date: values.date,
       signature: values.signature,
     });
   };
@@ -97,7 +99,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       // Generate PDF
       const pdfData = await generatePDF({
         ...values,
-        date: new Date(),
+        date: values.date,
         signatureUrl: receipt.signatureUrl,
       });
 
@@ -158,7 +160,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       // Generate PDF
       const pdfData = await generatePDF({
         ...values,
-        date: new Date(),
+        date: values.date,
         signatureUrl: receipt.signatureUrl,
       });
 
@@ -182,16 +184,12 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
 
   // Watch form values for real-time preview updates
   form.watch((values) => {
-    if (values.amount !== undefined && values.payerName && values.recipientName) {
+    if (values.amount !== undefined && values.payerName && values.recipientName && values.date) {
       updateReceiptData(values as ReceiptForm);
     }
   });
 
-  const currentDate = new Date().toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+
 
   return (
     <Form {...form}>
@@ -266,15 +264,22 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
           )}
         />
 
-        {/* Date Display */}
+        {/* Date Input */}
         <div>
           <Label className="text-sm font-medium text-foreground mb-2">
             Fecha del Recibo
           </Label>
           <Input
-            value={currentDate}
-            className="bg-muted"
-            readOnly
+            type="date"
+            value={receiptData.date.toISOString().split('T')[0]}
+            onChange={(e) => {
+              const newDate = new Date(e.target.value);
+              setReceiptData({
+                ...receiptData,
+                date: newDate
+              });
+            }}
+            className="bg-background"
           />
         </div>
 
