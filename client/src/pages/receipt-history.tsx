@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FloatingNav } from "@/components/floating-nav";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { History, Copy, FileText, Calendar, User, Euro } from "lucide-react";
-import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Receipt } from "@shared/schema";
 
@@ -62,7 +62,7 @@ export default function ReceiptHistory() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="bg-surface shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,14 +70,6 @@ export default function ReceiptHistory() {
             <div className="flex items-center">
               <History className="text-primary text-2xl mr-3" />
               <h1 className="text-xl font-semibold text-foreground">Historial de Recibos</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="outline">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Nuevo Recibo
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
@@ -104,12 +96,9 @@ export default function ReceiptHistory() {
                 <p className="text-muted-foreground mb-4">
                   Crea tu primer recibo para verlo aquí
                 </p>
-                <Link href="/">
-                  <Button>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Crear Recibo
-                  </Button>
-                </Link>
+                <p className="text-sm text-muted-foreground">
+                  Usa el botón "Inicio" en la navegación inferior para crear un recibo
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -183,6 +172,9 @@ export default function ReceiptHistory() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Floating Navigation */}
+      <FloatingNav />
     </div>
   );
 }
