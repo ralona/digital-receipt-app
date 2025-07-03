@@ -1,4 +1,5 @@
-import { users, receipts, type User, type InsertUser, type Receipt, type InsertReceipt } from "@shared/schema";
+import { type User, type InsertUser, type Receipt, type InsertReceipt } from "@shared/schema";
+import { db } from "./database";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -10,67 +11,146 @@ export interface IStorage {
   getAllReceipts(): Promise<Receipt[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private receipts: Map<number, Receipt>;
-  private currentUserId: number;
-  private currentReceiptId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.receipts = new Map();
-    this.currentUserId = 1;
-    this.currentReceiptId = 1;
-  }
+export class SQLiteStorage implements IStorage {
+  private getUserStmt = db.prepare("SELECT * FROM users WHERE id = ?");
+  private getUserByUsernameStmt = db.prepare("SELECT * FROM users WHERE username = ?");
+  private createUserStmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?) RETURNING *");
+  private createReceiptStmt = db.prepare(`
+    INSERT INTO receipts (amount, payer_name, recipient_name, date, signature_url, pdf_url, drive_file_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    RETURNING *
+  `);
+  private getReceiptStmt = db.prepare("SELECT * FROM receipts WHERE id = ?");
+  private updateReceiptStmt = db.prepare(`
+    UPDATE receipts 
+    SET amount = COALESCE(?, amount),
+        payer_name = COALESCE(?, payer_name),
+        recipient_name = COALESCE(?, recipient_name),
+        date = COALESCE(?, date),
+        signature_url = COALESCE(?, signature_url),
+        pdf_url = COALESCE(?, pdf_url),
+        drive_file_id = COALESCE(?, drive_file_id)
+    WHERE id = ?
+    RETURNING *
+  `);
+  private getAllReceiptsStmt = db.prepare("SELECT * FROM receipts ORDER BY created_at DESC");
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const row = this.getUserStmt.get(id) as any;
+    if (!row) return undefined;
+    
+    return {
+      id: row.id,
+      username: row.username,
+      password: row.password,
+    };
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const row = this.getUserByUsernameStmt.get(username) as any;
+    if (!row) return undefined;
+    
+    return {
+      id: row.id,
+      username: row.username,
+      password: row.password,
+    };
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const row = this.createUserStmt.get(insertUser.username, insertUser.password) as any;
+    
+    return {
+      id: row.id,
+      username: row.username,
+      password: row.password,
+    };
   }
 
   async createReceipt(insertReceipt: InsertReceipt): Promise<Receipt> {
-    const id = this.currentReceiptId++;
-    const receipt: Receipt = {
-      ...insertReceipt,
-      id,
-      date: new Date(),
-      pdfUrl: null,
-      driveFileId: null,
-      createdAt: new Date(),
-      signatureUrl: insertReceipt.signatureUrl || null,
+    const now = new Date().toISOString();
+    const row = this.createReceiptStmt.get(
+      insertReceipt.amount,
+      insertReceipt.payerName,
+      insertReceipt.recipientName,
+      now,
+      insertReceipt.signatureUrl || null,
+      null, // pdfUrl
+      null  // driveFileId
+    ) as any;
+    
+    return {
+      id: row.id,
+      amount: row.amount,
+      payerName: row.payer_name,
+      recipientName: row.recipient_name,
+      date: new Date(row.date),
+      signatureUrl: row.signature_url,
+      pdfUrl: row.pdf_url,
+      driveFileId: row.drive_file_id,
+      createdAt: new Date(row.created_at),
     };
-    this.receipts.set(id, receipt);
-    return receipt;
   }
 
   async getReceipt(id: number): Promise<Receipt | undefined> {
-    return this.receipts.get(id);
+    const row = this.getReceiptStmt.get(id) as any;
+    if (!row) return undefined;
+    
+    return {
+      id: row.id,
+      amount: row.amount,
+      payerName: row.payer_name,
+      recipientName: row.recipient_name,
+      date: new Date(row.date),
+      signatureUrl: row.signature_url,
+      pdfUrl: row.pdf_url,
+      driveFileId: row.drive_file_id,
+      createdAt: new Date(row.created_at),
+    };
   }
 
   async updateReceipt(id: number, updates: Partial<Receipt>): Promise<Receipt | undefined> {
-    const receipt = this.receipts.get(id);
-    if (!receipt) return undefined;
+    const row = this.updateReceiptStmt.get(
+      updates.amount || null,
+      updates.payerName || null,
+      updates.recipientName || null,
+      updates.date?.toISOString() || null,
+      updates.signatureUrl || null,
+      updates.pdfUrl || null,
+      updates.driveFileId || null,
+      id
+    ) as any;
     
-    const updatedReceipt = { ...receipt, ...updates };
-    this.receipts.set(id, updatedReceipt);
-    return updatedReceipt;
+    if (!row) return undefined;
+    
+    return {
+      id: row.id,
+      amount: row.amount,
+      payerName: row.payer_name,
+      recipientName: row.recipient_name,
+      date: new Date(row.date),
+      signatureUrl: row.signature_url,
+      pdfUrl: row.pdf_url,
+      driveFileId: row.drive_file_id,
+      createdAt: new Date(row.created_at),
+    };
   }
 
   async getAllReceipts(): Promise<Receipt[]> {
-    return Array.from(this.receipts.values());
+    const rows = this.getAllReceiptsStmt.all() as any[];
+    
+    return rows.map(row => ({
+      id: row.id,
+      amount: row.amount,
+      payerName: row.payer_name,
+      recipientName: row.recipient_name,
+      date: new Date(row.date),
+      signatureUrl: row.signature_url,
+      pdfUrl: row.pdf_url,
+      driveFileId: row.drive_file_id,
+      createdAt: new Date(row.created_at),
+    }));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SQLiteStorage();

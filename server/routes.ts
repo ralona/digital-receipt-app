@@ -38,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new receipt
   app.post("/api/receipts", upload.single('signature'), async (req, res) => {
     try {
-      const { amount, payerName, recipientName } = req.body;
+      const { amount, payerName, recipientName, date } = req.body;
       
       // Validate required fields
       if (!amount || !payerName || !recipientName) {

@@ -23,10 +23,10 @@ This is a full-stack web application for generating digital receipts. The applic
 - **Development**: Hot reloading with Vite integration
 
 ### Database Architecture
-- **Database**: PostgreSQL (configured for production)
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Migration**: Drizzle Kit for schema migrations
-- **Connection**: Neon Database serverless adapter for cloud deployment
+- **Database**: SQLite with better-sqlite3 (perfect for mobile webapp deployment)
+- **Storage**: File-based database in `data/receipts.db`
+- **Features**: WAL mode for performance, prepared statements for security
+- **Migration**: Automatic table creation on startup
 
 ## Key Components
 
@@ -83,7 +83,7 @@ This is a full-stack web application for generating digital receipts. The applic
 ### Backend Dependencies
 - **Express.js**: Web framework with middleware
 - **File Upload**: Multer for multipart form handling
-- **Database**: Drizzle ORM with PostgreSQL driver
+- **Database**: better-sqlite3 for SQLite operations
 - **Validation**: Zod for request validation
 - **Development**: tsx for TypeScript execution
 
@@ -120,7 +120,10 @@ This is a full-stack web application for generating digital receipts. The applic
 
 ```
 Changelog:
-- July 03, 2025. Initial setup
+- July 03, 2025. Initial setup with React/TypeScript frontend and Express backend
+- July 03, 2025. Added SQLite database with better-sqlite3 for mobile webapp deployment
+- July 03, 2025. Implemented floating navigation UI with modern design
+- July 03, 2025. Added receipt history with persistent storage
 ```
 
 ## User Preferences

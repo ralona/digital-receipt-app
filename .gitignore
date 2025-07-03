@@ -4,3 +4,12 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Database files
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+
+# Uploads
+/uploads/*
+!/uploads/.gitkeep
