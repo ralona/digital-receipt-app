@@ -8,6 +8,24 @@ interface PDFData {
   signatureUrl?: string;
 }
 
+// Function to convert base64 to data URL
+function convertSignatureToDataURL(signatureUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx!.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = signatureUrl;
+  });
+}
+
 export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   const doc = new jsPDF();
 
@@ -27,93 +45,97 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   doc.setLineWidth(0.5);
   doc.line(20, 50, 190, 50);
 
-  // Transaction Information
+  // Left column - INFORMACIÓN DE LA TRANSACCIÓN
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("INFORMACIÓN DE LA TRANSACCIÓN", 20, 70);
+  doc.text("INFORMACIÓN DE LA", 20, 70);
+  doc.text("TRANSACCIÓN", 20, 82);
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text("Fecha:", 20, 85);
+  doc.text("Fecha:", 20, 100);
+  doc.setFont("helvetica", "bold");
   doc.text(data.date.toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
     day: "numeric",
-  }), 60, 85);
+    month: "long",
+    year: "numeric",
+  }), 20, 112);
 
-  doc.text("Importe:", 20, 100);
+  doc.setFont("helvetica", "normal");
+  doc.text("Importe:", 20, 130);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(34, 139, 34); // Green color
-  doc.text(`€ ${data.amount.toLocaleString("es-ES", {
+  doc.setFontSize(14);
+  doc.text(`${data.amount.toLocaleString("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`, 60, 100);
+  })} €`, 20, 142);
 
-  // Reset color
+  // Reset color and font
   doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-
-  // Payment Details
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("DETALLES DEL PAGO", 20, 125);
-
   doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.text("Pagado por:", 20, 140);
+
+  // Right column - DETALLES DEL PAGO
   doc.setFont("helvetica", "bold");
-  doc.text(data.payerName, 60, 140);
+  doc.text("DETALLES DEL PAGO", 110, 70);
 
   doc.setFont("helvetica", "normal");
-  doc.text("Recibido por:", 20, 155);
+  doc.text("Pagado por:", 110, 88);
   doc.setFont("helvetica", "bold");
-  doc.text(data.recipientName, 60, 155);
+  const payerLines = doc.splitTextToSize(data.payerName, 75);
+  doc.text(payerLines, 110, 100);
 
-  // Payment Description
+  doc.setFont("helvetica", "normal");
+  doc.text("Recibido por:", 110, 120);
+  doc.setFont("helvetica", "bold");
+  const recipientLines = doc.splitTextToSize(data.recipientName, 75);
+  doc.text(recipientLines, 110, 132);
+
+  // DESCRIPCIÓN DEL PAGO section
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("DESCRIPCIÓN DEL PAGO", 20, 180);
+  doc.text("DESCRIPCIÓN DEL PAGO", 20, 175);
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  const description = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de € ${data.amount.toLocaleString("es-ES", {
+  const description = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de `;
+  const amountText = `${data.amount.toLocaleString("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })} a ${data.recipientName} en la fecha indicada.`;
+  })} €`;
+  const description2 = ` a ${data.recipientName} en la fecha indicada.`;
 
-  // Split text to fit width
-  const splitText = doc.splitTextToSize(description, 170);
-  doc.text(splitText, 20, 195);
+  // Split and draw description
+  doc.text(description, 20, 190);
+  doc.setTextColor(34, 139, 34); // Green color for amount
+  doc.setFont("helvetica", "bold");
+  doc.text(amountText, 20 + doc.getTextWidth(description), 190);
+  doc.setTextColor(0, 0, 0); // Reset color
+  doc.setFont("helvetica", "normal");
+  doc.text(description2, 20 + doc.getTextWidth(description) + doc.getTextWidth(amountText), 190);
 
   // Signature Section
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text("Firma del Receptor:", 20, 230);
-
-  // Draw signature line
-  doc.line(20, 250, 100, 250);
+  doc.text("Firma del Receptor:", 20, 220);
 
   // Add signature image if available
   if (data.signatureUrl) {
     try {
-      // In a real implementation, you would load the image and add it to the PDF
-      // doc.addImage(signatureImage, 'PNG', 20, 235, 80, 15);
+      const signatureDataURL = await convertSignatureToDataURL(data.signatureUrl);
+      doc.addImage(signatureDataURL, 'PNG', 20, 230, 60, 20);
     } catch (error) {
       console.error("Error adding signature to PDF:", error);
+      // Draw signature line if image fails
+      doc.line(20, 245, 100, 245);
     }
+  } else {
+    // Draw signature line
+    doc.line(20, 245, 100, 245);
   }
 
+  doc.setFont("helvetica", "bold");
   doc.text(data.recipientName, 20, 260);
-
-  // Footer
-  doc.setFontSize(10);
-  doc.setTextColor(128, 128, 128); // Gray color
-  doc.text("Este recibo ha sido generado electrónicamente y es válido sin firma física", 105, 280, { align: "center" });
-  doc.text(`Generado el ${new Date().toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })}`, 105, 290, { align: "center" });
 
   return doc.output("arraybuffer");
 }
