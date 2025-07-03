@@ -40,13 +40,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { amount, payerName, recipientName } = req.body;
       
+      // Validate required fields
+      if (!amount || !payerName || !recipientName) {
+        return res.status(400).json({ 
+          message: "Missing required fields: amount, payerName, recipientName" 
+        });
+      }
+      
       // Convert amount to cents
       const amountInCents = Math.round(parseFloat(amount) * 100);
       
+      if (isNaN(amountInCents) || amountInCents <= 0) {
+        return res.status(400).json({ 
+          message: "Invalid amount provided" 
+        });
+      }
+      
       const receiptData = {
         amount: amountInCents,
-        payerName,
-        recipientName,
+        payerName: payerName.trim(),
+        recipientName: recipientName.trim(),
         signatureUrl: req.file ? `/uploads/${req.file.filename}` : null,
       };
 

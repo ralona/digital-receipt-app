@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReceiptForm } from "@/components/receipt-form";
 import { ReceiptPreview } from "@/components/receipt-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, FileText, Upload } from "lucide-react";
+import { Receipt, FileText, Upload, History } from "lucide-react";
+import { Link } from "wouter";
 
 export interface ReceiptData {
   amount: number;
@@ -23,6 +24,23 @@ export default function ReceiptGenerator() {
 
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Load copied receipt data from localStorage on component mount
+  useEffect(() => {
+    const copiedData = localStorage.getItem("copyReceiptData");
+    if (copiedData) {
+      try {
+        const parsedData = JSON.parse(copiedData);
+        setReceiptData({
+          ...parsedData,
+          date: new Date(), // Always use current date
+        });
+        localStorage.removeItem("copyReceiptData"); // Clear after loading
+      } catch (error) {
+        console.error("Error loading copied receipt data:", error);
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -34,6 +52,12 @@ export default function ReceiptGenerator() {
               <h1 className="text-xl font-semibold text-foreground">Generador de Recibos</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/history">
+                <button className="flex items-center px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <History className="mr-2 h-4 w-4" />
+                  Historial
+                </button>
+              </Link>
               <span className="text-sm text-muted-foreground">v1.0</span>
             </div>
           </div>
