@@ -38,10 +38,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new receipt
   app.post("/api/receipts", upload.single('signature'), async (req, res) => {
     try {
-      console.log("Received request body:", req.body);
-      console.log("Received file:", req.file);
-      console.log("All request fields:", Object.keys(req.body));
-      
       const { amount, payerName, recipientName, date } = req.body;
       
       // Validate required fields
