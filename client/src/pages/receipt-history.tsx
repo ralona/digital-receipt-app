@@ -20,12 +20,15 @@ export default function ReceiptHistory() {
   });
 
   const handleCopyReceipt = async (receipt: Receipt) => {
+    console.log("Copying receipt:", receipt);
     try {
       const receiptData = {
         amount: receipt.amount / 100, // Convert cents to euros
         payerName: receipt.payerName,
         recipientName: receipt.recipientName,
       };
+
+      console.log("Receipt data to copy:", receiptData);
 
       // If there's a signature, we need to fetch it and convert it to a File
       let signatureFile: File | undefined;
@@ -39,12 +42,18 @@ export default function ReceiptHistory() {
         }
       }
 
-      // Store the data in localStorage for the receipt generator to pick up
-      localStorage.setItem('copiedReceiptData', JSON.stringify({
+      const dataToStore = {
         ...receiptData,
         signatureUrl: receipt.signatureUrl,
         hasSignature: !!receipt.signatureUrl
-      }));
+      };
+
+      console.log("Storing data in localStorage:", dataToStore);
+
+      // Store the data in localStorage for the receipt generator to pick up
+      localStorage.setItem('copiedReceiptData', JSON.stringify(dataToStore));
+
+      console.log("Data stored, navigating to home...");
 
       // Navigate to home page
       setLocation('/');
@@ -54,6 +63,7 @@ export default function ReceiptHistory() {
         description: "Los datos del recibo han sido copiados. Puedes editarlos y generar un nuevo recibo.",
       });
     } catch (error) {
+      console.error("Error copying receipt:", error);
       toast({
         title: "Error",
         description: "No se pudo copiar el recibo",
