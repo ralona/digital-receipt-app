@@ -137,5 +137,5 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   doc.setFont("helvetica", "bold");
   doc.text(data.recipientName, 20, 260);
 
-  return doc.output("arraybuffer");
+  return new Uint8Array(doc.output("arraybuffer"));
 }

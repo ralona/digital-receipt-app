@@ -8,29 +8,58 @@ import { FloatingNav } from "@/components/floating-nav";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { History, Copy, FileText, Calendar, User, Euro } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import type { Receipt } from "@shared/schema";
 
 export default function ReceiptHistory() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { data: receipts, isLoading, error } = useQuery<Receipt[]>({
     queryKey: ["/api/receipts"],
   });
 
-  const handleCopyReceipt = (receipt: Receipt) => {
-    const receiptData = {
-      amount: receipt.amount / 100, // Convert cents to euros
-      payerName: receipt.payerName,
-      recipientName: receipt.recipientName,
-    };
-    
-    // Store in localStorage for the receipt generator to pick up
-    localStorage.setItem("copyReceiptData", JSON.stringify(receiptData));
-    
-    toast({
-      title: "Datos copiados",
-      description: "Los datos del recibo han sido copiados. Ve al generador para crear uno nuevo.",
-    });
+  const handleCopyReceipt = async (receipt: Receipt) => {
+    try {
+      const receiptData = {
+        amount: receipt.amount / 100, // Convert cents to euros
+        payerName: receipt.payerName,
+        recipientName: receipt.recipientName,
+      };
+
+      // If there's a signature, we need to fetch it and convert it to a File
+      let signatureFile: File | undefined;
+      if (receipt.signatureUrl) {
+        try {
+          const response = await fetch(receipt.signatureUrl);
+          const blob = await response.blob();
+          signatureFile = new File([blob], 'signature.png', { type: 'image/png' });
+        } catch (error) {
+          console.error("Error loading signature:", error);
+        }
+      }
+
+      // Store the data in localStorage for the receipt generator to pick up
+      localStorage.setItem('copiedReceiptData', JSON.stringify({
+        ...receiptData,
+        signatureUrl: receipt.signatureUrl,
+        hasSignature: !!receipt.signatureUrl
+      }));
+
+      // Navigate to home page
+      setLocation('/');
+
+      toast({
+        title: "Recibo copiado",
+        description: "Los datos del recibo han sido copiados. Puedes editarlos y generar un nuevo recibo.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo copiar el recibo",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
