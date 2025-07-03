@@ -40,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received request body:", req.body);
       console.log("Received file:", req.file);
+      console.log("All request fields:", Object.keys(req.body));
       
       const { amount, payerName, recipientName, date } = req.body;
       
