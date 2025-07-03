@@ -28,14 +28,11 @@ export default function ReceiptGenerator() {
 
   // Load copied receipt data from localStorage on component mount
   useEffect(() => {
-    console.log("Checking for copied receipt data...");
     const copiedData = localStorage.getItem('copiedReceiptData');
-    console.log("Copied data found:", copiedData);
     
     if (copiedData) {
       try {
         const parsedData = JSON.parse(copiedData);
-        console.log("Parsed data:", parsedData);
         
         setReceiptData(prev => ({
           ...prev,
@@ -45,8 +42,6 @@ export default function ReceiptGenerator() {
           signatureUrl: parsedData.signatureUrl,
           date: new Date(), // Always use current date for new receipts
         }));
-        
-        console.log("Receipt data updated with copied data");
         
         // Clear the copied data after loading
         localStorage.removeItem('copiedReceiptData');
