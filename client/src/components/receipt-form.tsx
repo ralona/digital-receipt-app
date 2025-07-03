@@ -68,10 +68,12 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
 
   const handleGeneratePDF = async () => {
     const values = form.getValues();
-    if (!form.formState.isValid) {
+    
+    // Validate only required fields
+    if (!values.amount || values.amount <= 0 || !values.payerName || !values.recipientName) {
       toast({
         title: "Error de validación",
-        description: "Por favor, complete todos los campos requeridos",
+        description: "Por favor, complete el importe, nombre del pagador y nombre del receptor",
         variant: "destructive",
       });
       return;
@@ -127,10 +129,12 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
 
   const handleSaveToGoogleDrive = async () => {
     const values = form.getValues();
-    if (!form.formState.isValid) {
+    
+    // Validate only required fields
+    if (!values.amount || values.amount <= 0 || !values.payerName || !values.recipientName) {
       toast({
         title: "Error de validación",
-        description: "Por favor, complete todos los campos requeridos",
+        description: "Por favor, complete el importe, nombre del pagador y nombre del receptor",
         variant: "destructive",
       });
       return;
