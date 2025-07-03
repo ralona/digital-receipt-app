@@ -14,11 +14,10 @@ export interface IStorage {
 export class SQLiteStorage implements IStorage {
   private getUserStmt = db.prepare("SELECT * FROM users WHERE id = ?");
   private getUserByUsernameStmt = db.prepare("SELECT * FROM users WHERE username = ?");
-  private createUserStmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?) RETURNING *");
+  private createUserStmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
   private createReceiptStmt = db.prepare(`
     INSERT INTO receipts (amount, payer_name, recipient_name, date, signature_url, pdf_url, drive_file_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    RETURNING *
   `);
   private getReceiptStmt = db.prepare("SELECT * FROM receipts WHERE id = ?");
   private updateReceiptStmt = db.prepare(`
@@ -31,7 +30,6 @@ export class SQLiteStorage implements IStorage {
         pdf_url = COALESCE(?, pdf_url),
         drive_file_id = COALESCE(?, drive_file_id)
     WHERE id = ?
-    RETURNING *
   `);
   private getAllReceiptsStmt = db.prepare("SELECT * FROM receipts ORDER BY created_at DESC");
 
@@ -58,18 +56,19 @@ export class SQLiteStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const row = this.createUserStmt.get(insertUser.username, insertUser.password) as any;
+    const result = this.createUserStmt.run(insertUser.username, insertUser.password);
+    const id = result.lastInsertRowid as number;
     
     return {
-      id: row.id,
-      username: row.username,
-      password: row.password,
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
     };
   }
 
   async createReceipt(insertReceipt: InsertReceipt): Promise<Receipt> {
     const now = new Date().toISOString();
-    const row = this.createReceiptStmt.get(
+    const result = this.createReceiptStmt.run(
       insertReceipt.amount,
       insertReceipt.payerName,
       insertReceipt.recipientName,
@@ -77,19 +76,17 @@ export class SQLiteStorage implements IStorage {
       insertReceipt.signatureUrl || null,
       null, // pdfUrl
       null  // driveFileId
-    ) as any;
+    );
     
-    return {
-      id: row.id,
-      amount: row.amount,
-      payerName: row.payer_name,
-      recipientName: row.recipient_name,
-      date: new Date(row.date),
-      signatureUrl: row.signature_url,
-      pdfUrl: row.pdf_url,
-      driveFileId: row.drive_file_id,
-      createdAt: new Date(row.created_at),
-    };
+    const id = result.lastInsertRowid as number;
+    
+    // Get the created receipt
+    const createdReceipt = await this.getReceipt(id);
+    if (!createdReceipt) {
+      throw new Error("Failed to create receipt");
+    }
+    
+    return createdReceipt;
   }
 
   async getReceipt(id: number): Promise<Receipt | undefined> {
@@ -110,7 +107,7 @@ export class SQLiteStorage implements IStorage {
   }
 
   async updateReceipt(id: number, updates: Partial<Receipt>): Promise<Receipt | undefined> {
-    const row = this.updateReceiptStmt.get(
+    const result = this.updateReceiptStmt.run(
       updates.amount || null,
       updates.payerName || null,
       updates.recipientName || null,
@@ -119,21 +116,12 @@ export class SQLiteStorage implements IStorage {
       updates.pdfUrl || null,
       updates.driveFileId || null,
       id
-    ) as any;
+    );
     
-    if (!row) return undefined;
+    if (result.changes === 0) return undefined;
     
-    return {
-      id: row.id,
-      amount: row.amount,
-      payerName: row.payer_name,
-      recipientName: row.recipient_name,
-      date: new Date(row.date),
-      signatureUrl: row.signature_url,
-      pdfUrl: row.pdf_url,
-      driveFileId: row.drive_file_id,
-      createdAt: new Date(row.created_at),
-    };
+    // Get the updated receipt
+    return await this.getReceipt(id);
   }
 
   async getAllReceipts(): Promise<Receipt[]> {
