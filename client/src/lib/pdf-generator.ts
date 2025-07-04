@@ -150,21 +150,47 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   })} €`;
   const descriptionEnd = ` a ${data.recipientName} en la fecha indicada.`;
   
-  // Calculate text positions for multiline description
-  const fullText = descriptionText + amountText + descriptionEnd;
-  const lines = doc.splitTextToSize(fullText, pageWidth - 60);
+  // Build the description with proper spacing
+  const fullText = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de ${amountText} a ${data.recipientName} en la fecha indicada.`;
   
-  // Draw the description text
+  // Split the text manually to preserve spacing
+  const words = fullText.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  // Calculate the maximum width
+  const maxWidth = pageWidth - 60;
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+    const testWidth = doc.getTextWidth(testLine);
+    
+    if (testWidth > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  // Draw the description text line by line
   let currentY = descriptionStartY + 18;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
     
+    // Check if this line contains the amount
     if (line.includes(amountText)) {
-      // This line contains the amount, need to color it differently
-      const beforeAmount = line.substring(0, line.indexOf(amountText));
-      const afterAmount = line.substring(line.indexOf(amountText) + amountText.length);
+      // Split the line at the amount for proper coloring
+      const amountIndex = line.indexOf(amountText);
+      const beforeAmount = line.substring(0, amountIndex);
+      const afterAmount = line.substring(amountIndex + amountText.length);
       
       // Draw text before amount
       doc.text(beforeAmount, 30, currentY);
@@ -181,6 +207,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
       doc.setFont("helvetica", "normal");
       doc.text(afterAmount, 30 + beforeWidth + amountWidth, currentY);
     } else {
+      // Regular text line
       doc.text(line, 30, currentY);
     }
     currentY += 4;
