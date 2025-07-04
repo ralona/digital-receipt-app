@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { FileUpload } from "@/components/file-upload";
+import { SignatureInput } from "@/components/signature-input";
 import { generatePDF } from "@/lib/pdf-generator";
 import { saveToGoogleDrive } from "@/lib/google-drive";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -307,18 +307,17 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
           />
         </div>
 
-        {/* Signature Upload */}
+        {/* Signature Input */}
         <FormField
           control={form.control}
           name="signature"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Firma Digital (PNG)</FormLabel>
+              <FormLabel>Firma Digital</FormLabel>
               <FormControl>
-                <FileUpload
+                <SignatureInput
                   onFileSelect={(file) => field.onChange(file)}
-                  accept=".png,.jpg,.jpeg"
-                  maxSize={2 * 1024 * 1024} // 2MB
+                  currentFile={field.value}
                 />
               </FormControl>
               <FormMessage />
