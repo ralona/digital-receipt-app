@@ -156,6 +156,13 @@ export function FloatingNav({
                         <li>• La fecha se puede cambiar según sea necesario</li>
                       </ul>
                     </div>
+
+                    <div className="pt-4 border-t border-border">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-foreground">Versión</h3>
+                        <span className="text-sm text-muted-foreground">v1.0</span>
+                      </div>
+                    </div>
                   </div>
                 </SheetContent>
               </Sheet>
