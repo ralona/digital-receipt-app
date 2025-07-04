@@ -13,7 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Upload } from "lucide-react";
 import { type ReceiptData } from "@/pages/receipt-generator";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface ReceiptFormProps {
   receiptData: ReceiptData;
@@ -37,7 +37,14 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
     },
   });
 
-  // Sync form with receiptData when it changes (for copied receipts)
+  // Watch for receiptData changes and update form when needed
+  const stringifiedReceiptData = JSON.stringify({
+    amount: receiptData.amount,
+    payerName: receiptData.payerName,
+    recipientName: receiptData.recipientName,
+    date: receiptData.date?.getTime()
+  });
+  
   useEffect(() => {
     form.reset({
       amount: receiptData.amount,
@@ -46,7 +53,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       date: receiptData.date,
       signature: undefined,
     });
-  }, [receiptData.amount, receiptData.payerName, receiptData.recipientName, receiptData.date]);
+  }, [stringifiedReceiptData]);
 
   const createReceiptMutation = useMutation({
     mutationFn: async (data: FormData) => {

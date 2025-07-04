@@ -117,6 +117,27 @@ This is a full-stack web application for generating digital receipts. The applic
 └── dist/           # Build output
 ```
 
+## Mobile App Configuration
+
+### Capacitor Native App Setup
+- **Android Project**: Configured in `android/` directory with Capacitor
+- **App ID**: com.recibos.app
+- **Build Directory**: dist/public (configured in capacitor.config.ts)
+- **Icons**: Created 192x192 and 512x512 PNG icons from SVG
+- **Splash Screen**: Blue themed with app branding
+
+### Distribution Options
+1. **PWA Installation**: Direct browser installation (already working)
+2. **Android APK**: Native app compilation via Android Studio + Capacitor
+3. **Paid Services**: Appilix ($69/year), MobiLoud ($350+/month), Median.co (custom pricing)
+
+### Files Created for Mobile
+- `capacitor.config.ts` - Capacitor configuration
+- `android/` - Native Android project
+- `MOBILE_APP_GUIDE.md` - Complete deployment guide
+- `client/public/manifest.json` - PWA manifest
+- `client/public/sw.js` - Service Worker
+
 ## Changelog
 
 ```
@@ -126,6 +147,7 @@ Changelog:
 - July 03, 2025. Implemented floating navigation UI with modern design
 - July 03, 2025. Added receipt history with persistent storage
 - July 03, 2025. Implemented PWA (Progressive Web App) functionality with Service Worker, manifest, and mobile icons
+- July 03, 2025. Configured Capacitor for native Android app development and created complete mobile deployment guide
 ```
 
 ## User Preferences
