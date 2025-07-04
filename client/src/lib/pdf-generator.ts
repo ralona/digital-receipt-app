@@ -143,15 +143,13 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   
-  const descriptionText = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de `;
-  const amountText = `${data.amount.toLocaleString("es-ES", {
+  // Build the complete description with explicit spacing
+  const amountFormatted = `${data.amount.toLocaleString("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} €`;
-  const descriptionEnd = ` a ${data.recipientName} en la fecha indicada.`;
   
-  // Build the description with proper spacing
-  const fullText = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de ${amountText} a ${data.recipientName} en la fecha indicada.`;
+  const fullText = `Por la presente, certifico que ${data.payerName} ha entregado la cantidad de ${amountFormatted} a ${data.recipientName} en la fecha indicada.`;
   
   // Split the text manually to preserve spacing
   const words = fullText.split(' ');
@@ -186,11 +184,11 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
     doc.setTextColor(50, 50, 50);
     
     // Check if this line contains the amount
-    if (line.includes(amountText)) {
+    if (line.includes(amountFormatted)) {
       // Split the line at the amount for proper coloring
-      const amountIndex = line.indexOf(amountText);
+      const amountIndex = line.indexOf(amountFormatted);
       const beforeAmount = line.substring(0, amountIndex);
-      const afterAmount = line.substring(amountIndex + amountText.length);
+      const afterAmount = line.substring(amountIndex + amountFormatted.length);
       
       // Draw text before amount
       doc.text(beforeAmount, 30, currentY);
@@ -199,8 +197,8 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
       // Draw amount in green
       doc.setTextColor(34, 139, 34);
       doc.setFont("helvetica", "bold");
-      doc.text(amountText, 30 + beforeWidth, currentY);
-      const amountWidth = doc.getTextWidth(amountText);
+      doc.text(amountFormatted, 30 + beforeWidth, currentY);
+      const amountWidth = doc.getTextWidth(amountFormatted);
       
       // Draw text after amount
       doc.setTextColor(50, 50, 50);
