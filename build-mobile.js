@@ -9,18 +9,38 @@ async function buildForMobile() {
   // Crear directorio dist/public si no existe
   await fs.mkdir('dist/public', { recursive: true });
 
-  // Copiar el HTML principal
-  const htmlContent = await fs.readFile('client/index.html', 'utf8');
-  
-  // Modificar el HTML para que funcione como aplicación independiente
-  const mobileHtml = htmlContent
-    .replace('src="/src/main.tsx"', 'src="./assets/main.js"')
-    .replace('/uploads/', './assets/');
+  // Verificar si existe el build de Vite
+  let htmlContent;
+  try {
+    // Intentar copiar desde el build de Vite
+    htmlContent = await fs.readFile('dist/index.html', 'utf8');
+    console.log('✅ Usando build de Vite');
+    
+    // Copiar todos los archivos del build
+    await fs.cp('dist', 'dist/public', { recursive: true, force: true });
+    
+    // Ajustar las rutas para Capacitor
+    htmlContent = htmlContent
+      .replace(/src="\/assets\//g, 'src="./assets/')
+      .replace(/href="\/assets\//g, 'href="./assets/')
+      .replace(/\/uploads\//g, './assets/');
+    
+    await fs.writeFile('dist/public/index.html', htmlContent);
+    
+  } catch (error) {
+    console.log('⚠️  Build de Vite no encontrado, usando HTML básico');
+    // Fallback al HTML básico
+    htmlContent = await fs.readFile('client/index.html', 'utf8');
+    
+    // Modificar el HTML para que funcione como aplicación independiente
+    const mobileHtml = htmlContent
+      .replace('src="/src/main.tsx"', 'src="./assets/main.js"')
+      .replace('/uploads/', './assets/');
 
-  await fs.writeFile('dist/public/index.html', mobileHtml);
+    await fs.writeFile('dist/public/index.html', mobileHtml);
 
-  // Crear archivo JavaScript básico para la app
-  const jsContent = `
+    // Crear archivo JavaScript básico para la app
+    const jsContent = `
 // Capacitor Mobile App Entry Point
 console.log('Generador de Recibos - Mobile App Starting...');
 
@@ -31,8 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 `;
 
-  await fs.mkdir('dist/public/assets', { recursive: true });
-  await fs.writeFile('dist/public/assets/main.js', jsContent);
+    await fs.mkdir('dist/public/assets', { recursive: true });
+    await fs.writeFile('dist/public/assets/main.js', jsContent);
+  }
 
   // Copiar iconos y manifest
   try {
