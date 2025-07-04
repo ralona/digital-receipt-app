@@ -188,28 +188,28 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   
   // Signature section
   const signatureStartY = 190;
-  const signatureAreaWidth = 120;
   const signatureAreaX = 25;
+  const signatureAreaWidth = pageWidth - 50; // Full width like preview
   
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
   doc.text("Firma del Receptor:", signatureAreaX, signatureStartY);
   
-  // Signature line (centered)
+  // Signature line (full width like preview)
   doc.setLineWidth(0.5);
-  doc.setDrawColor(150, 150, 150);
-  const lineY = signatureStartY + 20;
-  doc.line(signatureAreaX + 20, lineY, signatureAreaX + signatureAreaWidth, lineY);
+  doc.setDrawColor(180, 180, 180);
+  const lineY = signatureStartY + 25;
+  doc.line(signatureAreaX, lineY, signatureAreaX + signatureAreaWidth, lineY);
   
-  // Add signature image if available (centered)
+  // Add signature image if available (centered horizontally)
   if (data.signatureUrl) {
     try {
       const signatureDataURL = await convertSignatureToDataURL(data.signatureUrl);
-      const imgWidth = 50;
-      const imgHeight = 15;
-      const imgX = signatureAreaX + (signatureAreaWidth - imgWidth) / 2;
-      doc.addImage(signatureDataURL, 'PNG', imgX, signatureStartY + 5, imgWidth, imgHeight);
+      const imgWidth = 40;
+      const imgHeight = 12;
+      const imgX = (pageWidth - imgWidth) / 2; // Center horizontally on page
+      doc.addImage(signatureDataURL, 'PNG', imgX, signatureStartY + 8, imgWidth, imgHeight);
     } catch (error) {
       console.error("Error adding signature to PDF:", error);
     }
@@ -219,8 +219,31 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(50, 50, 50);
-  const nameY = lineY + 8;
-  doc.text(data.recipientName, signatureAreaX + (signatureAreaWidth / 2), nameY, { align: "center" });
+  const nameY = lineY + 10;
+  doc.text(data.recipientName, pageWidth / 2, nameY, { align: "center" });
+  
+  // Footer section
+  const footerStartY = nameY + 25;
+  
+  // Add border line above footer
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(25, footerStartY, pageWidth - 25, footerStartY);
+  
+  // Footer text
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(120, 120, 120);
+  doc.text("Este recibo ha sido generado electrónicamente y es válido sin firma física", 
+           pageWidth / 2, footerStartY + 10, { align: "center" });
+  
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Generado el ${new Date().toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  })}`, pageWidth / 2, footerStartY + 18, { align: "center" });
   
   return new Uint8Array(doc.output("arraybuffer"));
 }
