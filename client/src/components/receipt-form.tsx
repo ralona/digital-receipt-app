@@ -46,7 +46,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
       date: receiptData.date,
       signature: undefined,
     });
-  }, [receiptData, form]);
+  }, [receiptData.amount, receiptData.payerName, receiptData.recipientName, receiptData.date]);
 
   const createReceiptMutation = useMutation({
     mutationFn: async (data: FormData) => {

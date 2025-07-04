@@ -40,6 +40,7 @@ This is a full-stack web application for generating digital receipts. The applic
 - **PDF Generation**: Client-side PDF creation using jsPDF
 - **Google Drive Integration**: Automatic backup of generated receipts
 - **Real-time Preview**: Live preview of receipt as user types
+- **PWA Support**: Progressive Web App with offline functionality, mobile installation, and native app experience
 
 ### UI Components
 - **Shadcn/ui**: Modern, accessible component library
@@ -124,6 +125,7 @@ Changelog:
 - July 03, 2025. Added SQLite database with better-sqlite3 for mobile webapp deployment
 - July 03, 2025. Implemented floating navigation UI with modern design
 - July 03, 2025. Added receipt history with persistent storage
+- July 03, 2025. Implemented PWA (Progressive Web App) functionality with Service Worker, manifest, and mobile icons
 ```
 
 ## User Preferences
