@@ -125,13 +125,18 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   doc.text(recipientLines, rightColumnX, 125);
   
   // Description section with background
-  doc.setFillColor(248, 248, 248);
-  doc.rect(25, 150, pageWidth - 50, 25, 'F');
+  const descriptionStartY = 140;
+  const descriptionHeight = 35;
+  
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(25, descriptionStartY, pageWidth - 50, descriptionHeight, 3, 3, 'FD');
   
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(80, 80, 80);
-  doc.text("DESCRIPCIÓN DEL PAGO", 30, 162);
+  doc.text("DESCRIPCIÓN DEL PAGO", 30, descriptionStartY + 10);
   
   // Description text
   doc.setFontSize(9);
@@ -150,7 +155,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   const lines = doc.splitTextToSize(fullText, pageWidth - 60);
   
   // Draw the description text
-  let currentY = 170;
+  let currentY = descriptionStartY + 18;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     doc.setFont("helvetica", "normal");
@@ -182,31 +187,40 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   }
   
   // Signature section
+  const signatureStartY = 190;
+  const signatureAreaWidth = 120;
+  const signatureAreaX = 25;
+  
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
-  doc.text("Firma del Receptor:", 25, 195);
+  doc.text("Firma del Receptor:", signatureAreaX, signatureStartY);
   
-  // Signature line
+  // Signature line (centered)
   doc.setLineWidth(0.5);
   doc.setDrawColor(150, 150, 150);
-  doc.line(25, 215, 125, 215);
+  const lineY = signatureStartY + 20;
+  doc.line(signatureAreaX + 20, lineY, signatureAreaX + signatureAreaWidth, lineY);
   
-  // Add signature image if available
+  // Add signature image if available (centered)
   if (data.signatureUrl) {
     try {
       const signatureDataURL = await convertSignatureToDataURL(data.signatureUrl);
-      doc.addImage(signatureDataURL, 'PNG', 25, 200, 60, 12);
+      const imgWidth = 50;
+      const imgHeight = 15;
+      const imgX = signatureAreaX + (signatureAreaWidth - imgWidth) / 2;
+      doc.addImage(signatureDataURL, 'PNG', imgX, signatureStartY + 5, imgWidth, imgHeight);
     } catch (error) {
       console.error("Error adding signature to PDF:", error);
     }
   }
   
-  // Recipient name under signature
+  // Recipient name under signature (centered)
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(50, 50, 50);
-  doc.text(data.recipientName, 75, 225, { align: "center" });
+  const nameY = lineY + 8;
+  doc.text(data.recipientName, signatureAreaX + (signatureAreaWidth / 2), nameY, { align: "center" });
   
   return new Uint8Array(doc.output("arraybuffer"));
 }
