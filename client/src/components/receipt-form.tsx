@@ -37,23 +37,28 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
     },
   });
 
-  // Watch for receiptData changes and update form when needed
-  const stringifiedReceiptData = JSON.stringify({
-    amount: receiptData.amount,
-    payerName: receiptData.payerName,
-    recipientName: receiptData.recipientName,
-    date: receiptData.date?.getTime()
-  });
+  // Use ref to track previous receipt data and prevent infinite loops
+  const prevReceiptDataRef = useRef<string>("");
   
   useEffect(() => {
-    form.reset({
+    const currentReceiptData = JSON.stringify({
       amount: receiptData.amount,
       payerName: receiptData.payerName,
       recipientName: receiptData.recipientName,
-      date: receiptData.date,
-      signature: undefined,
+      date: receiptData.date?.getTime()
     });
-  }, [stringifiedReceiptData]);
+    
+    if (prevReceiptDataRef.current !== currentReceiptData) {
+      prevReceiptDataRef.current = currentReceiptData;
+      form.reset({
+        amount: receiptData.amount,
+        payerName: receiptData.payerName,
+        recipientName: receiptData.recipientName,
+        date: receiptData.date,
+        signature: undefined,
+      });
+    }
+  }, [receiptData.amount, receiptData.payerName, receiptData.recipientName, receiptData.date, form]);
 
   const createReceiptMutation = useMutation({
     mutationFn: async (data: FormData) => {
