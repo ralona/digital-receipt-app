@@ -132,11 +132,21 @@ This is a full-stack web application for generating digital receipts. The applic
 3. **Paid Services**: Appilix ($69/year), MobiLoud ($350+/month), Median.co (custom pricing)
 
 ### Files Created for Mobile
-- `capacitor.config.ts` - Capacitor configuration
-- `android/` - Native Android project
-- `MOBILE_APP_GUIDE.md` - Complete deployment guide
+- `capacitor.config.ts` - Capacitor configuration with app ID com.recibos.app
+- `android/` - Complete native Android project with Gradle build system
+- `build-mobile.js` - ES module script to prepare web assets for Capacitor
+- `scripts/build-android.sh` - Complete build script for Android compilation
+- `MOBILE_APP_GUIDE.md` - Complete deployment guide for all platforms
+- `ANDROID_BUILD_INSTRUCTIONS.md` - Detailed Android compilation instructions
 - `client/public/manifest.json` - PWA manifest
 - `client/public/sw.js` - Service Worker
+
+### Build Environment
+- **Java**: OpenJDK 17 installed and configured
+- **Gradle**: 8.11.1 (downloading dependencies)
+- **Android SDK**: Available through Android Studio
+- **Package Name**: com.recibos.app
+- **App Name**: Generador de Recibos
 
 ## Changelog
 

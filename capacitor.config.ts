@@ -5,7 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Generador de Recibos',
   webDir: 'dist/public',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    // For development, you can use live reload
+    // url: 'http://192.168.1.100:5000',
+    // cleartext: true
   },
   plugins: {
     SplashScreen: {
