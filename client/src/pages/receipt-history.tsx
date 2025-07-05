@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FloatingNav } from "@/components/floating-nav";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { History, Copy, FileText, Calendar, User, Euro, Trash2 } from "lucide-react";
@@ -87,7 +86,7 @@ export default function ReceiptHistory() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 safe-area-inset-top">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
@@ -99,14 +98,12 @@ export default function ReceiptHistory() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center text-red-500">
-                Error al cargar el historial de recibos
-              </div>
-            </CardContent>
-          </Card>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 safe-area-inset-top">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-lg">
+              Error al cargar el historial de recibos
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -115,115 +112,93 @@ export default function ReceiptHistory() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-semibold text-foreground flex items-center">
-              <History className="text-primary text-2xl mr-3" />
-              Recibos Generados
-            </CardTitle>
-            <p className="text-muted-foreground">
-              {isMobile 
-                ? "Historial de recibos guardados localmente en tu dispositivo"
-                : "Historial de todos los recibos que has creado"
-              }
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 safe-area-inset-top">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold text-foreground mb-3 flex items-center">
+            <History className="text-primary text-3xl mr-3" />
+            Recibos Generados
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {isMobile 
+              ? "Historial de recibos guardados localmente en tu dispositivo"
+              : "Historial de todos los recibos que has creado"
+            }
+          </p>
+        </div>
+
+        {/* Content Section */}
+        {!receipts || receipts.length === 0 ? (
+          <div className="text-center py-16">
+            <FileText className="mx-auto h-20 w-20 text-muted-foreground mb-6" />
+            <h3 className="text-xl font-medium text-foreground mb-3">
+              No hay recibos aún
+            </h3>
+            <p className="text-muted-foreground mb-4 text-lg">
+              Crea tu primer recibo para verlo aquí
             </p>
-          </CardHeader>
-          <CardContent>
-            {!receipts || receipts.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No hay recibos aún
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Crea tu primer recibo para verlo aquí
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Usa el botón "Inicio" en la navegación inferior para crear un recibo
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Importe</TableHead>
-                      <TableHead>Pagador</TableHead>
-                      <TableHead>Receptor</TableHead>
-                      <TableHead>Firma</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {receipts.map((receipt) => (
-                      <TableRow key={receipt.id}>
-                        <TableCell className="font-medium">
-                          #{receipt.id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {formatDate(new Date(receipt.date))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center font-medium text-green-600">
-                            <Euro className="mr-1 h-4 w-4" />
-                            {formatCurrency(receipt.amount / 100)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {receipt.payerName}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {receipt.recipientName}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {receipt.signatureUrl ? (
-                            <Badge variant="secondary">Con firma</Badge>
-                          ) : (
-                            <Badge variant="outline">Sin firma</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyReceipt(receipt)}
-                            >
-                              <Copy className="h-4 w-4 mr-1" />
-                              Copiar
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteReceipt(receipt)}
-                              disabled={isDeleting}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Eliminar
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <p className="text-muted-foreground">
+              Usa el botón "Inicio" en la navegación inferior para crear un recibo
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {receipts.map((receipt) => (
+              <Card key={receipt.id} className="bg-card border">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-lg">#{receipt.id}</span>
+                      <span className="font-bold text-xl text-green-600">
+                        {formatCurrency(receipt.amount / 100)}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground text-sm">
+                      <Calendar className="mr-1 h-4 w-4" />
+                      {formatDate(new Date(receipt.date))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="text-sm text-muted-foreground">De: {receipt.payerName}</div>
+                      <div className="text-sm text-muted-foreground">Para: {receipt.recipientName}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {receipt.signatureUrl ? (
+                        <Badge variant="secondary" className="text-xs">Con firma</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Sin firma</Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyReceipt(receipt)}
+                      className="flex-1"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteReceipt(receipt)}
+                      disabled={isDeleting}
+                      className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Floating Navigation */}

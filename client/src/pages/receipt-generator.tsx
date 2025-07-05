@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ReceiptForm } from "@/components/receipt-form";
 import { ReceiptPreview } from "@/components/receipt-preview";
 import { FloatingNav } from "@/components/floating-nav";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Receipt, Eye } from "lucide-react";
 
@@ -54,27 +53,25 @@ export default function ReceiptGenerator() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 safe-area-inset-top">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold text-foreground mb-3 flex items-center">
+            <Receipt className="text-primary text-3xl mr-3" />
+            Crear Nuevo Recibo
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Complete los datos para generar su recibo profesional
+          </p>
+        </div>
+
         {/* Form Section */}
-        <Card className="bg-surface">
-          <CardHeader>
-            <CardTitle className="text-2xl font-semibold text-foreground mb-2 flex items-center">
-              <Receipt className="text-primary text-2xl mr-3" />
-              Crear Nuevo Recibo
-            </CardTitle>
-            <p className="text-muted-foreground">
-              Complete los datos para generar su recibo profesional
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ReceiptForm
-              receiptData={receiptData}
-              setReceiptData={setReceiptData}
-              isGenerating={isGenerating}
-              setIsGenerating={setIsGenerating}
-            />
-          </CardContent>
-        </Card>
+        <ReceiptForm
+          receiptData={receiptData}
+          setReceiptData={setReceiptData}
+          isGenerating={isGenerating}
+          setIsGenerating={setIsGenerating}
+        />
       </main>
 
       {/* Preview Sheet */}
