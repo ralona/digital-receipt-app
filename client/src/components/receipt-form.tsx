@@ -4,13 +4,14 @@ import { receiptFormSchema, type ReceiptForm } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SignatureInput } from "@/components/signature-input";
 import { generatePDF } from "@/lib/pdf-generator";
+import { generateMobilePDF, downloadPDFMobile } from "@/lib/mobile-pdf-generator";
 import { saveToGoogleDrive } from "@/lib/google-drive";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useReceipts } from "@/hooks/use-receipts";
 import { FileText, Upload } from "lucide-react";
 import { type ReceiptData } from "@/pages/receipt-generator";
 import { useEffect, useRef } from "react";
@@ -24,7 +25,7 @@ interface ReceiptFormProps {
 
 export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGenerating }: ReceiptFormProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { saveReceipt, isSaving, isMobile } = useReceipts();
 
   const form = useForm<ReceiptForm>({
     resolver: zodResolver(receiptFormSchema),
@@ -60,26 +61,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
     }
   }, [receiptData.amount, receiptData.payerName, receiptData.recipientName, receiptData.date, form]);
 
-  const createReceiptMutation = useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await apiRequest("POST", "/api/receipts", data);
-      return response.json();
-    },
-    onSuccess: (receipt) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
-      toast({
-        title: "Recibo creado",
-        description: "El recibo ha sido generado exitosamente",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // Removed createReceiptMutation - now using useReceipts hook
 
   const updateReceiptData = (values: ReceiptForm) => {
     setReceiptData({
@@ -109,43 +91,71 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
     updateReceiptData(values);
 
     try {
-      // Create receipt in database first
-      const formData = new FormData();
-      formData.append("amount", values.amount.toString());
-      formData.append("payerName", values.payerName);
-      formData.append("recipientName", values.recipientName);
-      if (values.signature) {
-        formData.append("signature", values.signature);
+      const receipt = await saveReceipt({
+        amount: values.amount,
+        payerName: values.payerName,
+        recipientName: values.recipientName,
+        date: values.date,
+        signature: values.signature,
+      });
+
+      let signatureForPDF = receipt.signatureUrl;
+      
+      if (isMobile && values.signature) {
+        try {
+          const reader = new FileReader();
+          signatureForPDF = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => {
+              const result = reader.result as string;
+              resolve(result);
+            };
+            reader.onerror = (error) => {
+              reject(error);
+            };
+            reader.readAsDataURL(values.signature);
+          });
+        } catch (error) {
+          signatureForPDF = receipt.signatureUrl;
+        }
+      }
+      const pdfData = isMobile 
+        ? await generateMobilePDF({
+            ...values,
+            date: values.date,
+            signatureUrl: signatureForPDF,
+          })
+        : await generatePDF({
+            ...values,
+            date: values.date,
+            signatureUrl: receipt.signatureUrl,
+          });
+
+      if (isMobile) {
+        await downloadPDFMobile(pdfData, `recibo-${receipt.id}.pdf`);
+      } else {
+        const blob = new Blob([pdfData], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `recibo-${receipt.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
 
-      const receipt = await createReceiptMutation.mutateAsync(formData);
-
-      // Generate PDF
-      const pdfData = await generatePDF({
-        ...values,
-        date: values.date,
-        signatureUrl: receipt.signatureUrl,
-      });
-
-      // Download PDF
-      const blob = new Blob([pdfData], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `recibo-${receipt.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "PDF generado",
-        description: "El recibo ha sido descargado exitosamente",
-      });
+      if (!isMobile) {
+        toast({
+          title: "PDF generado",
+          description: "El recibo ha sido descargado exitosamente",
+        });
+      }
     } catch (error) {
+      const errorMessage = error.message || "Error desconocido";
+      
       toast({
-        title: "Error",
-        description: "No se pudo generar el PDF",
+        title: "Error generando PDF",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -325,6 +335,7 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
           )}
         />
 
+
         {/* Form Actions */}
         <div className="flex flex-col sm:flex-row gap-4 pt-6">
           <Button
@@ -334,18 +345,21 @@ export function ReceiptForm({ receiptData, setReceiptData, isGenerating, setIsGe
             className="flex-1"
           >
             <FileText className="mr-2 h-4 w-4" />
-            Generar y Descargar PDF
+            {isGenerating ? "Generando..." : `${isMobile ? 'Compartir Recibo' : 'Generar y Descargar PDF'}`}
           </Button>
-          <Button
-            type="button"
-            onClick={handleSaveToGoogleDrive}
-            disabled={isGenerating}
-            className="flex-1 bg-green-600 hover:bg-green-700"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Guardar en Drive
-          </Button>
+          {!isMobile && (
+            <Button
+              type="button"
+              onClick={handleSaveToGoogleDrive}
+              disabled={isGenerating}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Guardar en Drive
+            </Button>
+          )}
         </div>
+
       </form>
     </Form>
   );

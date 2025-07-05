@@ -84,9 +84,25 @@ export default function ReceiptGenerator() {
             <SheetTitle className="text-xl font-semibold text-foreground">
               Vista Previa del Recibo
             </SheetTitle>
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg"
+              >
+                Cerrar Vista Previa
+              </button>
+            </div>
           </SheetHeader>
           <div className="mt-6">
             <ReceiptPreview receiptData={receiptData} />
+          </div>
+          <div className="flex justify-center mt-8 pb-6">
+            <button
+              onClick={() => setShowPreview(false)}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg"
+            >
+              Cerrar Vista Previa
+            </button>
           </div>
         </SheetContent>
       </Sheet>

@@ -1,23 +1,21 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FloatingNav } from "@/components/floating-nav";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { History, Copy, FileText, Calendar, User, Euro } from "lucide-react";
+import { History, Copy, FileText, Calendar, User, Euro, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useReceipts } from "@/hooks/use-receipts";
 import type { Receipt } from "@shared/schema";
 
 export default function ReceiptHistory() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: receipts, isLoading, error } = useQuery<Receipt[]>({
-    queryKey: ["/api/receipts"],
-  });
+  const { receipts, isLoading, error, deleteReceipt, isDeleting, isMobile } = useReceipts();
 
   const handleCopyReceipt = async (receipt: Receipt) => {
     try {
@@ -65,6 +63,27 @@ export default function ReceiptHistory() {
     }
   };
 
+  const handleDeleteReceipt = async (receipt: Receipt) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el recibo #${receipt.id}?`)) {
+      return;
+    }
+
+    try {
+      await deleteReceipt(receipt.id);
+      toast({
+        title: "Recibo eliminado",
+        description: `El recibo #${receipt.id} ha sido eliminado correctamente.`,
+      });
+    } catch (error) {
+      console.error("Error deleting receipt:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el recibo",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -104,7 +123,10 @@ export default function ReceiptHistory() {
               Recibos Generados
             </CardTitle>
             <p className="text-muted-foreground">
-              Historial de todos los recibos que has creado
+              {isMobile 
+                ? "Historial de recibos guardados localmente en tu dispositivo"
+                : "Historial de todos los recibos que has creado"
+              }
             </p>
           </CardHeader>
           <CardContent>
@@ -182,6 +204,16 @@ export default function ReceiptHistory() {
                               <Copy className="h-4 w-4 mr-1" />
                               Copiar
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteReceipt(receipt)}
+                              disabled={isDeleting}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Eliminar
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -195,7 +227,7 @@ export default function ReceiptHistory() {
       </main>
 
       {/* Floating Navigation */}
-      <FloatingNav />
+      <FloatingNav showMobileInfoButton={true} />
     </div>
   );
 }
